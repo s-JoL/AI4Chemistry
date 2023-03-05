@@ -25,7 +25,7 @@ class MolecularExpert(nn.Module):
 
         self.max_seq_len = max_seq_len
         self.criterion = nn.CrossEntropyLoss(reduction='none', label_smoothing=0.1)
-
+        self.hidden_size = hidden_size
         if self.graph_mode:
             self.atom_projector = nn.Linear(hidden_size, self.pred_vocab_size)
             self.bond_projector = nn.Sequential(
@@ -41,14 +41,16 @@ class MolecularExpert(nn.Module):
         image = inputs['image']
         image_feat = self.image_model(pixel_values=image).last_hidden_state
         image_feat = self.image_projector(image_feat)
-        # bert获取文字表示
-        text = inputs['text']
-        text_input = self.text_tokenizer(text, padding=True, return_tensors="pt")
-        text_input = {k: v[:, : 512].to(image.device) for k, v in text_input.items()}
-        text_mask = text_input['attention_mask']
-        text_feat = self.text_model(**text_input).last_hidden_state
-        # 读取shape
         bs, image_seq_len, image_hidden = image_feat.shape
+        # # bert获取文字表示
+        # text = inputs['text']
+        # text_input = self.text_tokenizer(text, padding=True, return_tensors="pt")
+        # text_input = {k: v[:, : 512].to(image.device) for k, v in text_input.items()}
+        # text_mask = text_input['attention_mask']
+        # text_feat = self.text_model(**text_input).last_hidden_state
+        # 屏蔽BERT
+        text_mask = torch.zeros((bs, 0), dtype=torch.int64, device=image.device)
+        text_feat = torch.zeros((bs, 0, self.hidden_size), dtype=image_feat.dtype, device=image_feat.device)
         _, text_seq_len, text_hidden = text_feat.shape
         # 不同模式输入不同
         if self.graph_mode:
