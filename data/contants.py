@@ -1,6 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import rdAbbreviations
 
+# 官能团开始标志
 RGroupBegin = ''
 
 RGroupEnd = ''
@@ -42,6 +43,7 @@ RGroupSymbols = {
     'Y': 2,
     'Z': 2
 }
+# 概率归一化
 total = sum([v for v in RGroupSymbols.values()])
 for k, v in RGroupSymbols.items():
     RGroupSymbols[k] = v / total
@@ -325,7 +327,7 @@ OCH<sub>2</sub>CN OCC#N'''
 
 Abbreviations = {}
 defaults = rdAbbreviations.GetDefaultAbbreviations()
-# 解析默认的
+# 解析默认的缩写
 for i in defaults:
     smarts = Chem.MolToSmarts(i.mol)
     label = i.displayLabel
@@ -341,7 +343,7 @@ for k in Abbreviations.keys():
     total = sum(Abbreviations[k].values())
     for kk in Abbreviations[k].keys():
         Abbreviations[k][kk] /= total
-# 加入外部的
+# 加入外部的缩写
 for i in outsides:
     smarts = i[0]
     if smarts not in Abbreviations:
@@ -354,7 +356,7 @@ for k in Abbreviations.keys():
     total = sum(Abbreviations[k].values())
     for kk in Abbreviations[k].keys():
         Abbreviations[k][kk] /= total
-# 加入外部的
+# 加入外部的缩写
 for i in outside_str.split('\n'):
     label, smarts = i.strip().split(' ')
     if smarts not in Abbreviations:

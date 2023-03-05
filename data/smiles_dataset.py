@@ -31,6 +31,7 @@ def to_canonical(smiles):
     return smiles
 
 def smiles_to_graph(smiles, *args, **kwargs):
+    # 根据MIT论文将SMILES转换成原子和键构成的图 Robust Molecular Image Recognition: A Graph Generation Approach
     mol = Chem.MolFromSmiles(smiles)
     atoms = mol.GetAtoms()
     atoms_num = len(atoms)
@@ -49,15 +50,17 @@ def smiles_to_graph(smiles, *args, **kwargs):
     return atoms_str, bonds_graph, bonds_mask
 
 def graph_to_smiles(atoms, bonds_graph, *args, **kwargs):
+    # 根据模型预估的图重构分子
     try:
         atoms = atoms.split(' ')
         if len(atoms) == 0:
             return '* |$Failed$|'
+        # 加入所有原子
         mol = Chem.RWMol()
         for atom_symbol in atoms:
             atom = Chem.Atom(atom_symbol)
             mol.AddAtom(atom)
-
+        # 根据图加入原子之间的键
         index_to_bond_type_map = {v: k for k, v in BondTypeToIndexMap.items()}
         num = len(bonds_graph)
         for i in range(num):
@@ -74,7 +77,7 @@ def graph_to_smiles(atoms, bonds_graph, *args, **kwargs):
         return '* |$Failed$|'
 
 def cxsmiles_remove_useless_info(cxsmiles):
-    # 去除生成的CXSmiles中的dummyLabel等无用信息，用于缩短text输入输出
+    # 去除生成的CXSmiles中的dummyLabel等无用信息，用于缩短text输入输出，保留R基团名字
     suffix_pattern = '\|.*?\|'
     suffix = re.search(suffix_pattern, cxsmiles)
     if suffix is None:
@@ -92,10 +95,12 @@ def cxsmiles_remove_useless_info(cxsmiles):
     return '{} |{}|'.format(prefix, r_group_info)
 
 def cxsmiles_encode(cxsmiles, smiles_tokenizer):
+    # 将复杂的CXSmiles转换成更简单的FGSmiles，和这篇类似Image2SMILES: Transformer-Based Molecular Optical Recognition Engine
     if '*' not in cxsmiles or ' |$' not in cxsmiles:
         return cxsmiles
     cxsmiles = cxsmiles_remove_useless_info(cxsmiles)
     smiles = cxsmiles.split(' |$')
+    # 取出Smiles和对应的R基团名字
     prefix, suffix = smiles
     suffix = suffix.split('$')[0]
     suffix = suffix.split(';')
@@ -105,6 +110,7 @@ def cxsmiles_encode(cxsmiles, smiles_tokenizer):
     out = []
     r_group_num = 0
     index = 0
+    # 将Smiles中的*替换为对应的名字
     while index < len(smiles_tokens):
         t = smiles_tokens[index]
         if t.upper() not in all_atom_symbols and t.lower() not in all_atom_symbols and t not in all_atom_symbols:
@@ -128,6 +134,7 @@ def cxsmiles_encode(cxsmiles, smiles_tokenizer):
     return ''.join(out)
 
 def cxsmiles_decode(string, smiles_tokenizer):
+    # 根据FGSmiles解码成CXSmiles，用于可视化计算准确率等
     contain_r_group = False
     for k in RGroupSymbols:
         if k in string:
@@ -165,6 +172,10 @@ def cxsmiles_decode(string, smiles_tokenizer):
     return cxsmiles
 
 def cxsmiles_to_graph(cxsmiles, smiles_tokenizer):
+    # CXSmiles转换成图，相比于Smiles主要是对R基团的名字需要更复杂的处理
+    # 最初的设计时 C[PAD]R group name[CLS]，通过加入[PAD][CLS]表示名字的开始结束，可以接受任意长度的R group name
+    # 这样设计后一个名字长度不再一定是1，因此在bond graph需要一些特殊处理，只用最后的[CLS]表示这个基团的键
+    # 但是这样太复杂并且没有必要，因此后续改为通过tokenizer加入特殊字符保持基团名字长度依然为1
     mol = Chem.MolFromSmiles(cxsmiles)
     atoms = mol.GetAtoms()
     seq_len = 0
@@ -196,6 +207,7 @@ def cxsmiles_to_graph(cxsmiles, smiles_tokenizer):
     return atom_names, bonds_graph, bonds_mask
 
 def graph_to_cxsmiles(atoms, bonds_graph, smiles_tokenizer):
+    # graph转换为CXSmiles
     try:
         tokens = smiles_tokenizer.tokenize(atoms)
         if len(tokens) == 0:
@@ -234,6 +246,7 @@ def graph_to_cxsmiles(atoms, bonds_graph, smiles_tokenizer):
         return '* |$Failed$|'
 
 def cut_molecule_and_replace_to_r_group(raw_smiles, num_r_groups=0):
+    # 将一个已有的分子选择可切断部分替换为R基团
     if num_r_groups == 0:
         return raw_smiles, []
     # 解析smiles
@@ -309,6 +322,7 @@ def cut_molecule_and_replace_to_r_group(raw_smiles, num_r_groups=0):
     return res[0], [sub]+res[1]
 
 def molecule_abbrevs(mol):
+    # 分子进行缩写
     abbrevs_string = []
     for k, v in Abbreviations.items():
         labels = list(v.keys())
@@ -384,6 +398,7 @@ class RandomTransform:
             return x
 
 class RandomNoise:
+    # 随机加入椒盐噪声
     def __init__(self, p):
         self.p = p
 

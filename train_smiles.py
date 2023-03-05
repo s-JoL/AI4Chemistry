@@ -13,7 +13,6 @@ from torchvision import transforms
 from transformers import AutoImageProcessor, Swinv2Model, ViTModel
 from transformers import AutoTokenizer, BertModel, PreTrainedTokenizerFast
 
-from utils.hdfs_io import hopen
 from data.contants import RGroupSymbols
 from data.smiles_dataset import (Image2SmilesDataset, SmilesRemoveNum, to_canonical,
 SmilesReplaceWithR, TransformV1, molecule_abbrevs, ImageTransform, RandomTransform, RandomNoise, cxsmiles_decode)
@@ -38,11 +37,11 @@ if accelerator.is_main_process:
         }
     )
 
-with hopen('hdfs://haruna/byte_search/aweme_relevance/roformer/data/train.txt', 'r') as fp:
+with open('uspto_data/train.txt', 'r') as fp:
     train_reaction_smarts = fp.readlines()
 train_smiles = set()
 for line in train_reaction_smarts:
-    reaction = Chem.AllChem.ReactionFromSmarts(line.strip().decode('utf-8'))
+    reaction = Chem.AllChem.ReactionFromSmarts(line.strip())
     for mol in reaction.GetReactants():
         smiles = Chem.MolToSmiles(mol)
         train_smiles.add(smiles)
@@ -53,11 +52,11 @@ for line in train_reaction_smarts:
     #     break
 train_smiles = list(train_smiles)
 
-with hopen('hdfs://haruna/byte_search/aweme_relevance/roformer/data/valid.txt', 'r') as fp:
+with open('uspto_data/valid.txt', 'r') as fp:
     valid_reaction_smarts = fp.readlines()
 valid_smiles = set()
 for line in valid_reaction_smarts:
-    reaction = Chem.AllChem.ReactionFromSmarts(line.strip().decode('utf-8'))
+    reaction = Chem.AllChem.ReactionFromSmarts(line.strip())
     for mol in reaction.GetReactants():
         smiles = Chem.MolToSmiles(mol)
         valid_smiles.add(smiles)
@@ -76,10 +75,12 @@ smiles_tokenizer.sep_token = '[SEP]'
 smiles_tokenizer.cls_token = '[CLS]'
 smiles_tokenizer.bos_token = '[BOS]'
 smiles_tokenizer.eos_token = '[EOS]'
+# 加入固定的R基团名字，避免被分词切开
 for symbol in RGroupSymbols.keys():
     if symbol not in smiles_tokenizer.vocab:
         smiles_tokenizer.add_tokens(symbol, special_tokens=True)
 
+# 加入数据增强
 smiles_transform = transforms.Compose([SmilesRemoveNum(0.8), SmilesReplaceWithR(0.4, 5)])
 image_preprocesser = AutoImageProcessor.from_pretrained(image_model_name)
 image_transform = ImageTransform(
