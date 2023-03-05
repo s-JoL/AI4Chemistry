@@ -85,10 +85,10 @@ smiles_transform = transforms.Compose([SmilesRemoveNum(0.8), SmilesReplaceWithR(
 image_preprocesser = AutoImageProcessor.from_pretrained(image_model_name)
 image_transform = ImageTransform(
     transforms.Compose([
-        RandomTransform(transforms.GaussianBlur((5, 5), 1), 0.2),
+        RandomTransform(transforms.GaussianBlur((5, 5), 1), 0.3),
         transforms.RandomPerspective(0.3, 0.1),
         transforms.RandomAdjustSharpness(0, 0.4),
-        RandomNoise(0.2)
+        RandomNoise(0.3)
         ]), 
         image_preprocesser)
 
@@ -113,7 +113,7 @@ valid_transform_smiles = TransformV1(
 train_set = Image2SmilesDataset(train_smiles, transform=train_transform_smiles)
 valid_set = Image2SmilesDataset(valid_smiles, transform=valid_transform_smiles)
 
-train_loader = DataLoader(train_set, batch_size=48, shuffle=False, drop_last=True)
+train_loader = DataLoader(train_set, batch_size=32, shuffle=False, drop_last=True, num_workers=8)
 valid_loader = DataLoader(valid_set, batch_size=1, shuffle=False, drop_last=True)
 
 image_model = Swinv2Model.from_pretrained(image_model_name)

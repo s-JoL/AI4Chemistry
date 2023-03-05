@@ -441,7 +441,7 @@ class TransformV1:
         if self.mol_transform:
             # 改变表示形式，信息不变
             image_mol = self.mol_transform(image_mol)
-        real_size = random.randint(int(self.mol_size[0]*0.7), int(self.mol_size[0]*1.3))
+        real_size = random.randint(int(self.mol_size[0]*0.5), int(self.mol_size[0]*1.3))
         drawer = Draw.rdMolDraw2D.MolDraw2DCairo(real_size, real_size)
         drawer_opts = drawer.drawOptions()
         # 字体大小 默认 6/40

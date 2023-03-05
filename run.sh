@@ -1,4 +1,5 @@
 train_mode=$1
+export OMP_NUM_THREADS=16
 # wget https://raw.githubusercontent.com/wengong-jin/nips17-rexgen/master/USPTO/data.zip
 # 不知道为啥google cloud上用到了torch_xla
 pip install transformers x-transformers accelerate deepspeed wandb rdkit torchvision absl-py scikit-image torch_xla
