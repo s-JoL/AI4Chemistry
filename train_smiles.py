@@ -185,7 +185,7 @@ for step in range(total_step):
             text = data['text'][0]
             image_mean = np.asarray([[image_preprocesser.image_mean]])
             image_std = np.asarray([[image_preprocesser.image_std]])
-            cutted_image = wandb.Image((cutted_image * image_std + image_mean), caption=text)
+            cutted_image = wandb.Image(np.clip(cutted_image * image_std + image_mean, 0, 1), caption=text)
             cutted_images.append(cutted_image)
 
             pred_smiles = pred['smiles']
