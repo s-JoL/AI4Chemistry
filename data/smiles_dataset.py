@@ -462,7 +462,7 @@ class TransformV1:
         # 显示氢原子 默认 False
         drawer_opts.explicitMethyl = random.random() > 0.5
         # 以80%概率黑白渲染 black and white
-        if random.random() < 0.8:
+        if random.random() < 0.9:
             drawer_opts.useBWAtomPalette()
         drawer.DrawMolecule(image_mol)
         png = bytearray(drawer.GetDrawingText())

@@ -81,13 +81,13 @@ for symbol in RGroupSymbols.keys():
         smiles_tokenizer.add_tokens(symbol, special_tokens=True)
 
 # 加入数据增强
-smiles_transform = transforms.Compose([SmilesRemoveNum(0.8), SmilesReplaceWithR(0.4, 5)])
+smiles_transform = transforms.Compose([SmilesRemoveNum(0.9), SmilesReplaceWithR(0.4, 5)])
 image_preprocesser = AutoImageProcessor.from_pretrained(image_model_name)
 image_transform = ImageTransform(
     transforms.Compose([
-        RandomTransform(transforms.GaussianBlur((5, 5), 1), 0.3),
+        RandomTransform(transforms.GaussianBlur((5, 5), 1), 0.2),
         transforms.RandomPerspective(0.3, 0.1),
-        transforms.RandomAdjustSharpness(0, 0.4),
+        transforms.RandomAdjustSharpness(0, 0.3),
         RandomNoise(0.3)
         ]), 
         image_preprocesser)
@@ -128,7 +128,7 @@ gpt = Decoder(
 )
 raw_model = MolecularExpert(False, image_model, tokenizer, text_model, smiles_tokenizer, gpt, max_seq_len=512)
 accelerator.print(raw_model)
-total_step = 200001
+total_step = 100001
 
 def linear_lr_with_warmup(total_step, warmup_rate=0.05):
     def lr_scheduler(step):
@@ -198,11 +198,11 @@ for step in range(total_step):
             pred_image = wandb.Image(pred_image, caption=pred_smiles)
             pred_images.append(pred_image)
         wandb.log({'raw molecular': raw_images, 'cutted molecular': cutted_images, 'pred molecular': pred_images})
-    if step % 5000 == 0 and step > 0 and accelerator.is_main_process:
+    if step % 2000 == 0 and step > 0 and accelerator.is_main_process:
         if not os.path.isdir('saved_ckpt'):
             os.mkdir('saved_ckpt')
         torch.save(raw_model.state_dict(), 'saved_ckpt/{}.pt'.format(step))
-    if step % 20000 == 0 and step > 0 and accelerator.is_main_process:
+    if step % 10000 == 0 and step > 0 and accelerator.is_main_process:
         canonical_cxsmiles = []
         canonical_decoded_cxsmiles = []
         correct_num = 0
