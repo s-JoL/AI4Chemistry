@@ -1,6 +1,7 @@
 import io
 import re
 import random
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 from rdkit import Chem
@@ -245,6 +246,47 @@ def graph_to_cxsmiles(atoms, bonds_graph, smiles_tokenizer):
         print('Error: graph_to_cxsmiles\n', e, '\n', atoms, '\n', bonds_graph)
         return '* |$Failed$|'
 
+def generate_arrows(img):
+    """
+    input: PIL.Image.Image
+    output: PIL.Image.Image
+    """
+    w, h = img.width, img.height
+    plt.figure(figsize=(w//100, h//100))
+    fig,ax = plt.subplots(w//100, h//100)
+    ax.axis("off")
+    ax.imshow(img)
+    # 去掉子图的白边
+    plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+    # 箭头个数
+    n = np.random.randint(0, 4)
+    # 生成箭头
+    for i in range(n):
+        # 随机采样箭头的位置、角度、透明度
+        xy_w, xy_h = random.uniform(0.1,0.9), random.uniform(0.1,0.9), 
+        xytext_w, xytext_h = random.uniform(0.1,0.9), random.uniform(0.1,0.9)
+        alpha = random.uniform(0.5,0.8)
+        rad = random.uniform(0.2,0.8)
+        ax.annotate("", 
+                    xy=(xy_w*w,xy_h*h), 
+                    xytext=(xytext_w*w, xytext_h*h),
+                    va="center", 
+                    ha="center",
+                    arrowprops=dict(color="#373331",
+                                    arrowstyle="->",
+                                    alpha=alpha,
+                                    linewidth=1,
+                                    connectionstyle=f"arc3,rad={rad}")
+                )
+    # 转成PIL.Image.Image
+    fig.canvas.draw()
+    w, h = fig.canvas.get_width_height()
+    buf = np.fromstring(fig.canvas.tostring_argb(), dtype=np.uint8)
+    buf.shape = (w, h, 4)
+    buf = np.roll(buf, 3, axis=2)
+    arrowed_img = Image.fromarray(buf)
+    return arrowed_img
+
 def cut_molecule_and_replace_to_r_group(raw_smiles, num_r_groups=0):
     # 将一个已有的分子选择可切断部分替换为R基团
     if num_r_groups == 0:
@@ -467,6 +509,11 @@ class TransformV1:
         drawer.DrawMolecule(image_mol)
         png = bytearray(drawer.GetDrawingText())
         mol_image = Image.open(io.BytesIO(png))
+        if random.random() < 0.5:
+            mol_image = mol_image.resize(real_size//4, real_size//4)
+            mol_image = mol_image.resize(real_size, real_size)
+        if random.random() < 0.2:
+            mol_image = generate_arrows(mol_image)
         # 后面再说
         templates = [
             'As an instance, {a} might be "{b}". ',
