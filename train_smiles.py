@@ -85,10 +85,10 @@ smiles_transform = transforms.Compose([SmilesRemoveNum(0.9), SmilesReplaceWithR(
 image_preprocesser = AutoImageProcessor.from_pretrained(image_model_name)
 image_transform = ImageTransform(
     transforms.Compose([
-        RandomTransform(transforms.GaussianBlur((5, 5), 1), 0.2),
+        RandomTransform(transforms.GaussianBlur((5, 5), 1), 0.0),
         transforms.RandomPerspective(0.3, 0.1),
         transforms.RandomAdjustSharpness(0, 0.3),
-        RandomNoise(0.3)
+        RandomNoise(0.2)
         ]), 
         image_preprocesser)
 

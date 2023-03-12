@@ -511,10 +511,17 @@ class TransformV1:
         drawer.DrawMolecule(image_mol)
         png = bytearray(drawer.GetDrawingText())
         mol_image = Image.open(io.BytesIO(png))
-        if random.random() < 0.5:
+        p = random.random()
+        if p < 0.1:
             mol_image = mol_image.resize((real_size//4, real_size//4))
             mol_image = mol_image.resize((real_size, real_size))
-        if random.random() < 0.2:
+        elif p < 0.3:
+            mol_image = mol_image.resize((real_size//3, real_size//3))
+            mol_image = mol_image.resize((real_size, real_size))
+        elif p < 0.5:
+            mol_image = mol_image.resize((real_size//2, real_size//2))
+            mol_image = mol_image.resize((real_size, real_size))
+        if random.random() < 0.3:
             mol_image = generate_arrows(mol_image)
         # 后面再说
         templates = [
